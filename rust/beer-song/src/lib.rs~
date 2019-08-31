@@ -1,0 +1,17 @@
+pub fn verse(n: i32) -> String {
+    match n {
+        0 => return String::from("No more bottles of beer on the wall, no more bottles of beer.\nGo to the store and buy some more, 99 bottles of beer on the wall."),
+        1...99 => return format!("{} bottles of beer on the wall, {} bottles of beer.\nTake one down and pass it around, {} bottles of beer on the wall.", n, n, n-1),
+        _ => return String::new(),
+    }
+    //unimplemented!("emit verse {}", n)
+}
+
+pub fn sing(mut start: i32, end: i32) -> String {
+    while start >= end {
+        start -= 1;
+        return verse(start);
+    }
+    return String::new();
+    //unimplemented!("sing verses {} to {}, inclusive", start, end)
+}
