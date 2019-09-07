@@ -5,6 +5,12 @@ struct User {
     is_active: bool,
 }
 
+impl User {
+    fn get_username(&self) -> &String {
+        &self.username
+    }
+}
+
 //Tuple struct
 #[derive(Debug)]
 struct Point(i32, i32);
@@ -18,6 +24,7 @@ fn main() {
         is_active: true,
     };
     println!("{:?}", user.email);
+    println!("username > {:?}", user.get_username());
     let origin = Point(0, 0);
     let black = Color(0, 0, 0);
     println!("{:?}", origin.1);
