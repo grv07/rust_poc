@@ -19,6 +19,16 @@ enum Coin {
     Quarter,
 }
 
+fn check_let_if(data: Option<i32>) -> Option<i32> {
+    if let data = Some(3) {
+        println!(" >> {:?}", data);
+        return data;
+    }
+    else {
+        return data;
+    }
+}
+
 fn value_in_cents(coin: Coin) {
     match coin {
         Coin::Penny => {
@@ -45,4 +55,5 @@ fn main() {
     println!("{:?}", localhost);
     println!("{:?}", value_in_cents(Coin::Penny));
     println!("{:?}", add_one(Option::Some(68)));
+    //check_let_if(Some(3));
 }
