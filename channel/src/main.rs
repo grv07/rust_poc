@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-// use std::ops::Drop;
 use std::sync::{Arc, Condvar, Mutex};
 
 struct Share<T> {
