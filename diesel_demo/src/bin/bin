@@ -1,0 +1,5 @@
+  /home/tyagig/rust_l/diesel_demo/src/bin:
+  total used in directory 16 available 883452740
+  drwxrwxr-x 2 tyagig tyagig 4096 Dec  3 22:02 .
+  drwxrwxr-x 3 tyagig tyagig 4096 Dec  3 22:02 ..
+  -rw-rw-r-- 1 tyagig tyagig  759 Dec  3 22:02 write_post.rs

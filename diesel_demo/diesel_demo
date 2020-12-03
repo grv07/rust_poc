@@ -1,0 +1,9 @@
+  /home/tyagig/rust_l/diesel_demo:
+  total used in directory 32 available 883453736
+  drwxrwxr-x  4 tyagig tyagig 4096 Dec  3 21:38 .
+  drwxrwxr-x 10 tyagig tyagig 4096 Dec  3 20:27 ..
+  -rw-rw-r--  1 tyagig tyagig  297 Dec  3 20:36 Cargo.toml
+  -rw-rw-r--  1 tyagig tyagig  136 Dec  3 21:11 diesel.toml
+  -rw-rw-r--  1 tyagig tyagig   62 Dec  3 21:38 .env
+  drwxrwxr-x  3 tyagig tyagig 4096 Dec  3 21:18 migrations
+  drwxrwxr-x  2 tyagig tyagig 4096 Dec  3 21:51 src
