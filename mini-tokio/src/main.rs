@@ -13,13 +13,15 @@ fn main() {
     let mut mini_tokio = MiniTokio::new();
     mini_tokio.spawn(
         async {
-            let when = Instant::now() + Duration::from_millis(100);
+            println!("first spawn register ...");
+            let when = Instant::now() + Duration::from_millis(1000);
             let future = Delay { when };
             let out = future.await;
             assert_eq!("done", out);
         });
     mini_tokio.spawn(
         async {
+            println!("sec pawn register ...");
             let when = Instant::now() + Duration::from_millis(1900);
             let future = Delay { when };
             let out = future.await;
