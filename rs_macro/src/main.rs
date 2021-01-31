@@ -40,10 +40,17 @@ macro_rules! avec {
     }};
 }
 
+macro_rules! pp {
+    ($($item:expr),*) => {
+     $(println!("{}", $item);)*
+    };
+}
+
 fn main() {
     println!("Hello, world!");
     hey!["my name", "veta"];
     data![];
+    pp!("data", "data2");
 }
 
 #[test]
