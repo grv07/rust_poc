@@ -25,9 +25,8 @@ pub fn derive(input: TokenStream) -> TokenStream {
     });
     let field_with_default = fields.iter().map(|field| {
         let name = field.ident.as_ref();
-        let ty = &field.ty;
         quote! {
-            #name: self.#name
+            #name: self.#name.clone()
         }
     });
 
@@ -35,9 +34,12 @@ pub fn derive(input: TokenStream) -> TokenStream {
     let command_builder = Ident::new(&format!("{}Builder", name), Span::call_site());
     let expansion = quote! {
         impl #name {
-            fn build(&self) -> #command_builder {
+            fn builder() -> #command_builder {
                 #command_builder {
-                    #(#field_with_default,)*
+                    executable: "".to_string(),
+                    args: vec![],
+                    env: vec![],
+                    current_dir: "".to_string()
                 }
             }
         }
@@ -47,8 +49,9 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
 
         impl #command_builder {
-            fn builder(&self) -> #command_builder {
+            fn build(&self) -> #command_builder {
                 #command_builder {
+                    #(#field_with_default,)*
                 }
             }
     }
