@@ -20,7 +20,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
         let name = field.ident.as_ref();
         let ty = &field.ty;
         quote! {
-            fn #name(&self, #name:#ty) {}
+            fn #name(&mut self, #name:#ty) -> &mut Self {
+                self.#name = #name;
+                self
+            }
         }
     });
     let field_with_default = fields.iter().map(|field| {
@@ -49,10 +52,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
 
         impl #command_builder {
-            fn build(&self) -> #command_builder {
-                #command_builder {
+            fn build(&self) -> std::result::Result<#command_builder, ()> {
+                Ok(#command_builder {
                     #(#field_with_default,)*
-                }
+                })
             }
     }
         impl #command_builder {
