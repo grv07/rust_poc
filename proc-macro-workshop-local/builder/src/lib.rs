@@ -1,8 +1,8 @@
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span};
+use proc_macro2::{Ident, Span, TokenTree, TokenTree::Group};
 use quote::quote;
 use syn::Data::Struct;
-use syn::{parse_macro_input, DeriveInput, Field, Type, TypePath};
+use syn::{parse_macro_input, Attribute, DeriveInput, Field, Type, TypePath};
 
 #[proc_macro_derive(Builder)]
 pub fn derive(input: TokenStream) -> TokenStream {
@@ -29,7 +29,17 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
     };
 
+    let get_builder_name = |field: &Field| {
+        for attr in &field.attrs {
+            let input = attr.parse_args::<syn::Ident>();
+            //let input = proc_macro::TokenStream::from(attr.tokens.clone());
+            //let data = parse_macro_input!(input as Vec<proc_macro2::Group>);
+            eprintln!("=============={:#?}", input);
+        }
+    };
+
     let method = fields.iter().map(|field| {
+        get_builder_name(field);
         let name = field.ident.as_ref();
         let ty = &field.ty;
         let is_op = is_field_optional(field);
