@@ -29,19 +29,45 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
     };
 
-    let get_builder_name = |field: &Field| {
-        for attr in &field.attrs {
-            let input = attr.parse_args::<syn::Ident>();
-            //let input = proc_macro::TokenStream::from(attr.tokens.clone());
-            //let data = parse_macro_input!(input as Vec<proc_macro2::Group>);
-            eprintln!("=============={:#?}", input);
+    fn get_build_ident(stream: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+        let token_tree = &mut stream.into_iter();
+        for token in token_tree {
+            if let proc_macro2::TokenTree::Group(ref g) = token {
+                return get_build_ident(g.stream());
+            }
+            if let proc_macro2::TokenTree::Literal(l) = token {
+                let literal = l.to_string().replace("\"", "p");
+                let ident = Ident::new(&literal, Span::call_site());
+                return quote! { fn #ident() {} };
+            }
+        }
+        quote! {}
+    }
+
+    let is_builder = |path: &syn::Path| {
+        let segments = &mut path.segments.iter();
+        if segments.next().unwrap().ident == "builder" {
+            true
+        } else {
+            false
         }
     };
 
+    let get_builder_field_name = |field: &Field| -> proc_macro2::TokenStream {
+        for attr in &field.attrs {
+            if is_builder(&attr.path) {
+                return get_build_ident(attr.tokens.clone());
+            }
+        }
+        quote! {}
+    };
+
     let method = fields.iter().map(|field| {
-        get_builder_name(field);
+        let extras = get_builder_field_name(field);
+        eprintln!("{:?}", extras);
         let name = field.ident.as_ref();
         let ty = &field.ty;
+        //let ident = get_build_ident(attr.tokens.clone());
         let is_op = is_field_optional(field);
         if is_op {
             quote! {
@@ -49,6 +75,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
                     self.#name = Some(#name);
                     self
                 }
+                #extras
             }
         } else {
             quote! {
@@ -56,6 +83,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
                     self.#name = Some(#name);
                     self
                 }
+                #extras
             }
         }
     });
