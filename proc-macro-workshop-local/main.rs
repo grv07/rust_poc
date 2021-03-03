@@ -18,4 +18,16 @@ pub struct Command {
     current_dir: Option<String>,
 }
 
-fn main() {}
+fn main() {
+    let command = Command::builder()
+        .executable("cargo".to_owned())
+        .arg("build".to_owned())
+        .arg("--release".to_owned())
+        .build();
+    println!("{:?}", command.is_ok());
+
+    command.unwrap();
+
+    assert_eq!(command.executable, "cargo");
+    assert_eq!(command.args, vec!["build", "--release"]);
+    }

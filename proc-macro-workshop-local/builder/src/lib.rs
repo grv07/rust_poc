@@ -1,13 +1,12 @@
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span, TokenTree, TokenTree::Group};
+use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::Data::Struct;
-use syn::{parse_macro_input, Attribute, DeriveInput, Field, Type, TypePath};
+use syn::{parse_macro_input, DeriveInput, Field, Type, TypePath};
 
-#[proc_macro_derive(Builder)]
+#[proc_macro_derive(Builder, attributes(builder))]
 pub fn derive(input: TokenStream) -> TokenStream {
     let parse_input = parse_macro_input!(input as DeriveInput);
-    eprintln!("{:#?}", parse_input);
     let fields = if let Struct(syn::DataStruct {
         fields: syn::Fields::Named(syn::FieldsNamed { ref named, .. }),
         ..
@@ -29,45 +28,44 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
     };
 
-    fn get_build_ident(stream: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    fn get_builder_attr_name(stream: proc_macro2::TokenStream) -> Option<String> {
         let token_tree = &mut stream.into_iter();
         for token in token_tree {
             if let proc_macro2::TokenTree::Group(ref g) = token {
-                return get_build_ident(g.stream());
+                return get_builder_attr_name(g.stream());
             }
             if let proc_macro2::TokenTree::Literal(l) = token {
-                let literal = l.to_string().replace("\"", "p");
-                let ident = Ident::new(&literal, Span::call_site());
-                return quote! { fn #ident() {} };
+                return Some(l.to_string().replace("\"", ""));
             }
         }
-        quote! {}
+        None
     }
 
-    let is_builder = |path: &syn::Path| {
-        let segments = &mut path.segments.iter();
-        if segments.next().unwrap().ident == "builder" {
-            true
-        } else {
-            false
-        }
-    };
-
-    let get_builder_field_name = |field: &Field| -> proc_macro2::TokenStream {
-        for attr in &field.attrs {
-            if is_builder(&attr.path) {
-                return get_build_ident(attr.tokens.clone());
+    let is_builder = |field: &Field| -> (bool, Option<String>) {
+        let mut result = false;
+        let mut builder_name = None;
+        let attr = &field.attrs.iter().next();
+        if attr.is_some() {
+            let attr = attr.unwrap();
+            builder_name = get_builder_attr_name(attr.tokens.clone());
+            let segments = &mut attr.path.segments.iter();
+            let segments = segments.next();
+            if segments.is_some() {
+                result = if segments.unwrap().ident == "builder" {
+                    true
+                } else {
+                    false
+                };
             }
         }
-        quote! {}
+        return (result, builder_name);
     };
 
     let method = fields.iter().map(|field| {
-        let extras = get_builder_field_name(field);
-        eprintln!("{:?}", extras);
+        let (_, attr_name) = is_builder(&field);
         let name = field.ident.as_ref();
+        let field_name = name.unwrap().to_string();
         let ty = &field.ty;
-        //let ident = get_build_ident(attr.tokens.clone());
         let is_op = is_field_optional(field);
         if is_op {
             quote! {
@@ -75,22 +73,47 @@ pub fn derive(input: TokenStream) -> TokenStream {
                     self.#name = Some(#name);
                     self
                 }
-                #extras
             }
         } else {
-            quote! {
-                fn #name(&mut self, #name: #ty) -> &mut Self {
-                    self.#name = Some(#name);
-                    self
+            let attr_name = attr_name.unwrap_or(String::from(""));
+            if attr_name == field_name {
+                let attr_ident = Ident::new(&attr_name, Span::call_site());
+                quote! {
+                    fn #attr_ident(&mut self, #attr_ident: String) -> &mut Self {
+                        let mut vec = self.#name.take().unwrap_or(Vec::new());
+                        vec.push(#attr_ident);
+                        self.#name = Some(vec);
+                        self
+                    }
                 }
-                #extras
+            } else if !attr_name.is_empty() {
+                let attr_ident = Ident::new(&attr_name, Span::call_site());
+                quote! {
+                    fn #attr_ident(&mut self, #attr_ident: String) -> &mut Self {
+                        let mut vec = self.#name.take().unwrap_or(Vec::new());
+                        vec.push(#attr_ident);
+                        self.#name = Some(vec);
+                        self
+                    }
+
+                    fn #name(&mut self, #name: #ty) -> &mut Self {
+                        self.#name = Some(#name);
+                        self
+                    }
+                }
+            } else {
+                quote! {
+                    fn #name(&mut self, #name: #ty) -> &mut Self {
+                        self.#name = Some(#name);
+                        self
+                    }
             }
+        }
         }
     });
 
     let field_with_default = fields.iter().map(|field| {
         let name = field.ident.as_ref();
-        let ty = &field.ty;
         let is_op = is_field_optional(field);
         if !is_op {
             quote! {
@@ -103,6 +126,19 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
     });
 
+    let new_builder_fields = fields.iter().map(|field| {
+        let name = field.ident.as_ref();
+        let (is_builder, _) = is_builder(&field);
+        if is_builder {
+            quote! {
+                #name: Some(Vec::new())
+            }
+        } else {
+            quote! {
+                #name: None
+            }
+        }
+    });
     let op_builder_fields = fields.iter().map(|field| {
         let name = field.ident.as_ref();
         let ty = &field.ty;
@@ -123,10 +159,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
         impl #name {
             fn builder() -> #command_builder {
                 #command_builder {
-                    executable: None,
-                    args: None,
-                    env: None,
-                    current_dir: None
+                    #(#new_builder_fields,)*
                 }
             }
         }
