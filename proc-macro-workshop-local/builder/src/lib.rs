@@ -103,12 +103,12 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 }
             } else {
                 quote! {
-                    fn #name(&mut self, #name: #ty) -> &mut Self {
-                        self.#name = Some(#name);
-                        self
-                    }
+                        fn #name(&mut self, #name: #ty) -> &mut Self {
+                            self.#name = Some(#name);
+                            self
+                        }
+                }
             }
-        }
         }
     });
 

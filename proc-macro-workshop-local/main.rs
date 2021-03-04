@@ -32,7 +32,6 @@
 //    assert_eq!(command.args, vec!["build", "--release"]);
 //    }
 
-
 use sorted::sorted;
 
 #[sorted]
