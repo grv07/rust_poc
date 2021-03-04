@@ -130,6 +130,7 @@ dependencies = [
 name = "sorted"
 version = "0.0.0"
 dependencies = [
+ "syn",
  "trybuild",
 ]
 

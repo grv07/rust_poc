@@ -6,28 +6,42 @@
 // To run the code:
 //     $ cargo run
 
-use derive_builder::Builder;
+//use derive_builder::Builder;
+//
+//#[derive(Builder)]
+//pub struct Command {
+//    executable: String,
+//    #[builder(each = "arg")]
+//    args: Vec<String>,
+//    #[builder(each = "env")]
+//    env: Vec<String>,
+//    current_dir: Option<String>,
+//}
+//
+//fn main() {
+//    let command = Command::builder()
+//        .executable("cargo".to_owned())
+//        .arg("build".to_owned())
+//        .arg("--release".to_owned())
+//        .build();
+//    println!("{:?}", command.is_ok());
+//
+//    command.unwrap();
+//
+//    assert_eq!(command.executable, "cargo");
+//    assert_eq!(command.args, vec!["build", "--release"]);
+//    }
 
-#[derive(Builder)]
-pub struct Command {
-    executable: String,
-    #[builder(each = "arg")]
-    args: Vec<String>,
-    #[builder(each = "env")]
-    env: Vec<String>,
-    current_dir: Option<String>,
+
+use sorted::sorted;
+
+#[sorted]
+pub enum Conference {
+    RustBeltRust,
+    RustConf,
+    RustFest,
+    RustLatam,
+    RustRush,
 }
 
-fn main() {
-    let command = Command::builder()
-        .executable("cargo".to_owned())
-        .arg("build".to_owned())
-        .arg("--release".to_owned())
-        .build();
-    println!("{:?}", command.is_ok());
-
-    command.unwrap();
-
-    assert_eq!(command.executable, "cargo");
-    assert_eq!(command.args, vec!["build", "--release"]);
-    }
+fn main() {}
