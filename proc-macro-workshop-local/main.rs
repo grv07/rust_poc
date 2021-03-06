@@ -46,7 +46,7 @@ pub enum Error {
 impl Display for Error {
     #[sorted::check]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        //use self::Error::*;
+        use self::Error::*;
 
         //#[sorted]
         match self {
