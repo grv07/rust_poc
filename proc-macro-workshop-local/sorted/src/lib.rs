@@ -2,10 +2,17 @@ use proc_macro::TokenStream;
 
 #[proc_macro_attribute]
 pub fn sorted(args: TokenStream, input: TokenStream) -> TokenStream {
-    let p_input = syn::parse_macro_input!(input as syn::Item);
     let _ = args;
-    let _ = input;
+    let mut c_input = proc_macro2::TokenStream::from(input.clone());
+    let p_input = syn::parse_macro_input!(input as syn::Item);
     println!("{:#?}", p_input);
+    if let Err(e) = sorted_variants(p_input) {
+        c_input.extend(e.to_compile_error());
+    }
+    c_input.into()
+}
+
+fn sorted_variants(input: syn::Item) -> Result<(), syn::Error> {
     // Checks if macro_attr is on an enum only.
     let is_item_enum = |item: &syn::Item| {
         if let syn::Item::Enum(syn::ItemEnum { .. }) = item {
@@ -14,13 +21,12 @@ pub fn sorted(args: TokenStream, input: TokenStream) -> TokenStream {
         false
     };
     // If Item is not enum then show an compile time error.
-    if !is_item_enum(&p_input) {
+    if !is_item_enum(&input) {
         let error = syn::Error::new(
             proc_macro2::Span::call_site(),
             "expected enum or match expression",
-        )
-        .into_compile_error();
-        return proc_macro::TokenStream::from(error);
+        );
+        return Err(error);
     }
 
     let variants = |item: &syn::Item| -> (Vec<syn::Ident>, Vec<String>) {
@@ -35,7 +41,7 @@ pub fn sorted(args: TokenStream, input: TokenStream) -> TokenStream {
         (var_vec, var_str_vec)
     };
 
-    let (field_ident, field_name) = variants(&p_input);
+    let (field_ident, field_name) = variants(&input);
     let mut name_vec = field_name.clone();
     name_vec.sort();
 
@@ -46,11 +52,10 @@ pub fn sorted(args: TokenStream, input: TokenStream) -> TokenStream {
                 let error = syn::Error::new(
                     field_ident[span_idx].span(),
                     format!("{} should sort before {}", name.1, field_name[name.0]),
-                )
-                .into_compile_error();
-                return proc_macro::TokenStream::from(error);
+                );
+                return Err(error);
             }
         }
     }
-    TokenStream::new()
+    Ok(())
 }
