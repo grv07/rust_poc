@@ -1,15 +1,30 @@
 use proc_macro::TokenStream;
+use quote::quote;
+use syn::visit_mut::VisitMut;
 
 #[proc_macro_attribute]
 pub fn check(args: TokenStream, input: TokenStream) -> TokenStream {
     let _ = args;
-    let mut c_input = proc_macro2::TokenStream::from(input.clone());
-    let p_input = syn::parse_macro_input!(input as syn::ItemFn);
-    println!("{:#?}", p_input);
+    let mut p_input = syn::parse_macro_input!(input as syn::ItemFn);
+    remove_custom_attr(&mut p_input);
+    //eprintln!("{:#?}", p_input);
+    let mut c_input = quote! {#p_input};
     if let Err(e) = sort_match(&p_input) {
         c_input.extend(e.to_compile_error());
     }
     c_input.into()
+}
+
+struct RemoveAttr;
+
+impl VisitMut for RemoveAttr {
+    fn visit_expr_match_mut(&mut self, i: &mut syn::ExprMatch) {
+        i.attrs.clear();
+    }
+}
+
+fn remove_custom_attr(input: &mut syn::ItemFn) {
+    RemoveAttr.visit_item_fn_mut(input);
 }
 
 fn sort_match(item_fn: &syn::ItemFn) -> Result<(), syn::Error> {
@@ -34,13 +49,19 @@ fn sort_match(item_fn: &syn::ItemFn) -> Result<(), syn::Error> {
         {
             let _is_sorted_apply_here = is_sorted_apply(attrs);
             let mut arm_names = Vec::new();
+            //eprintln!("{:?}", _is_sorted_apply_here);
             for arm in arms {
                 if let syn::Pat::TupleStruct(syn::PatTupleStruct { ref path, .. }) = &arm.pat {
                     let ident = &path.segments.iter().next().unwrap().ident;
-                    let ident_str = ident.to_string();
-                    //eprintln!("{:?}", ident_str);
+                    let ident_name = Vec::new();
+                    let _ident = path.segments.iter().fold(ident_name, |mut acc, segment| {
+                        acc.push(segment.ident.to_string());
+                        acc
+                    });
+                    let ident_str = _ident.join("::");
                     if !arm_names.is_empty() && arm_names.last().unwrap() > &ident_str {
                         if let Err(should_be) = arm_names.binary_search(&ident_str) {
+                            eprintln!("{:?}", ident.span().end());
                             let error = syn::Error::new(
                                 ident.span(),
                                 format!(
@@ -64,7 +85,7 @@ pub fn sorted(args: TokenStream, input: TokenStream) -> TokenStream {
     let _ = args;
     let mut c_input = proc_macro2::TokenStream::from(input.clone());
     let p_input = syn::parse_macro_input!(input as syn::Item);
-    println!("{:#?}", p_input);
+    //println!("{:#?}", p_input);
     if let Err(e) = sorted_variants(p_input) {
         c_input.extend(e.to_compile_error());
     }

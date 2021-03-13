@@ -82,7 +82,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::Error::*;
 
-        //#[sorted]
+        #[sorted]
         match self {
             Io(e) => write!(f, "{}", e),
             Fmt(e) => write!(f, "{}", e),
