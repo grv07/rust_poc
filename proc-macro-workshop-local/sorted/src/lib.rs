@@ -49,21 +49,24 @@ fn sort_match(item_fn: &syn::ItemFn) -> Result<(), syn::Error> {
         {
             let _is_sorted_apply_here = is_sorted_apply(attrs);
             let mut arm_names = Vec::new();
-            //eprintln!("{:?}", _is_sorted_apply_here);
+
+            let get_ident_name = |path: &syn::Path| -> String {
+                let mut data = Vec::new();
+                path.segments.iter().for_each(|segment| {
+                    data.push(segment.ident.to_string());
+                });
+                let full_name = data.join("::").to_string();
+                full_name
+            };
+
             for arm in arms {
+                eprintln!("{:#?}", arm);
                 if let syn::Pat::TupleStruct(syn::PatTupleStruct { ref path, .. }) = &arm.pat {
-                    let ident = &path.segments.iter().next().unwrap().ident;
-                    let ident_name = Vec::new();
-                    let _ident = path.segments.iter().fold(ident_name, |mut acc, segment| {
-                        acc.push(segment.ident.to_string());
-                        acc
-                    });
-                    let ident_str = _ident.join("::");
+                    let ident_str = get_ident_name(&path);
                     if !arm_names.is_empty() && arm_names.last().unwrap() > &ident_str {
                         if let Err(should_be) = arm_names.binary_search(&ident_str) {
-                            eprintln!("{:?}", ident.span().end());
-                            let error = syn::Error::new(
-                                ident.span(),
+                            let error = syn::Error::new_spanned(
+                                path,
                                 format!(
                                     "{} should sort before {}",
                                     ident_str, arm_names[should_be]
@@ -73,6 +76,9 @@ fn sort_match(item_fn: &syn::ItemFn) -> Result<(), syn::Error> {
                         }
                     }
                     arm_names.push(ident_str);
+                } else {
+                    let error = syn::Error::new_spanned(&arm.pat, "unsupported by #[sorted]");
+                    return Err(error);
                 };
             }
         }
